@@ -560,9 +560,7 @@ class GaussianDiffusion:
         :return: a dict with the key "loss" containing a tensor of shape [N].
                  Some mean or variance settings may also have other keys.
         """
-        xs_blurry_m1p1, bg_m1p1, mask_bool_0_1, x_start = x
-
-        x1_blurry_m1p1, x2_blurry_m1p1 = th.split(xs_blurry_m1p1, 3, 1)
+        x_blurry_m1p1, bg_m1p1, mask_bool_0_1, x_start = x
 
         if model_kwargs is None:
             model_kwargs = {}
@@ -573,10 +571,8 @@ class GaussianDiffusion:
         terms = {}
 
         if self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
-            model_output1, features1 = model(th.cat((x_t, x1_blurry_m1p1), dim=1),
-                                  self._scale_timesteps(t), **model_kwargs)
-            _, features2 = model(th.cat((x_t, x2_blurry_m1p1), dim=1),
-                                  self._scale_timesteps(t), **model_kwargs)
+            model_output, _ = model(th.cat((x_t, x_blurry_m1p1), dim=1),
+                                    self._scale_timesteps(t), **model_kwargs)
 
             if self.model_var_type in [
                 ModelVarType.LEARNED,
@@ -584,13 +580,13 @@ class GaussianDiffusion:
             ]:
                 B, C = x_t.shape[:2]
                 C = self.conf.out_channels
-                assert model_output1.shape == (B, C * 2, *x_t.shape[2:])
-                model_output1, model_var_values = th.split(model_output1, C, dim=1)
+                assert model_output.shape == (B, C * 2, *x_t.shape[2:])
+                model_output, model_var_values = th.split(model_output, C, dim=1)
                 # Learn the variance using the variational bound, but don't let
                 # it affect our mean prediction.
-                frozen_out = th.cat([model_output1.detach(), model_var_values], dim=1)
+                frozen_out = th.cat([model_output.detach(), model_var_values], dim=1)
                 terms["vb"] = self._vb_terms_bpd(model=lambda *args, r=frozen_out: r,
-                                                 x_start=x_start, x_blurry=x1_blurry_m1p1,
+                                                 x_start=x_start, x_blurry=x_blurry_m1p1,
                                                  usr_mask_m1p1=mask_bool_0_1, x_t=x_t,
                                                  bg_m1p1=bg_m1p1, t=t_alphas, clip_denoised=False)["output"]
                 if self.loss_type == LossType.RESCALED_MSE:
@@ -602,25 +598,20 @@ class GaussianDiffusion:
                 ModelMeanType.START_X: x_start,
                 ModelMeanType.EPSILON: noise,
             }[self.model_mean_type]
-            assert model_output1.shape == target.shape == x_start.shape
+            assert model_output.shape == target.shape == x_start.shape
 
             c = 0.3
             terms["mse"] = \
-                c * mean_flat((mask_bool_0_1 * (target[:, 1::4] - model_output1[:, 1::4])) ** 2) \
-                + c * mean_flat((mask_bool_0_1 * (target[:, 2::4] - model_output1[:, 2::4])) ** 2) \
-                + c * mean_flat((mask_bool_0_1 * (target[:, 3::4] - model_output1[:, 3::4])) ** 2)
-            terms["mse_mask"] = 2.0 * mean_flat((target[:, 0::4] - model_output1[:, 0::4]) ** 2)
-
-            res = 0
-            for f1, f2 in zip(features1, features2):
-                res = res + mean_flat((f1 - f2) ** 2)
-            terms["feature_loss"] = self.conf.feature_loss_weight * res
+                c * mean_flat((mask_bool_0_1 * (target[:, 1::4] - model_output[:, 1::4])) ** 2) \
+                + c * mean_flat((mask_bool_0_1 * (target[:, 2::4] - model_output[:, 2::4])) ** 2) \
+                + c * mean_flat((mask_bool_0_1 * (target[:, 3::4] - model_output[:, 3::4])) ** 2)
+            terms["mse_mask"] = 2.0 * mean_flat((target[:, 0::4] - model_output[:, 0::4]) ** 2)
 
             if "vb" in terms:
                 terms["loss"] = terms["mse"] + terms["vb"]
             else:
                 terms["loss"] = terms["mse"]
-            terms["loss"] = terms["loss"] + terms["mse_mask"] + terms["feature_loss"]
+            terms["loss"] = terms["loss"] + terms["mse_mask"]
         else:
             raise NotImplementedError(self.loss_type)
 
@@ -639,9 +630,7 @@ class GaussianDiffusion:
         :return: a dict with the key "loss" containing a tensor of shape [N].
                  Some mean or variance settings may also have other keys.
         """
-        xs_blurry_m1p1, bg_m1p1, mask_bool_0_1, x_tsr_m1p1 = x
-
-        x1_blurry_m1p1, x2_blurry_m1p1 = th.split(xs_blurry_m1p1, 3, 1)
+        x_blurry_m1p1, bg_m1p1, mask_bool_0_1, x_tsr_m1p1 = x
 
         if model_kwargs is None:
             model_kwargs = {}
@@ -652,21 +641,21 @@ class GaussianDiffusion:
         terms = {}
 
         if self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
-            model_output1, features1 = model(th.cat((x_t, x1_blurry_m1p1), dim=1),
-                                             self._scale_timesteps(t), **model_kwargs)
+            model_output, _ = model(th.cat((x_t, x_blurry_m1p1), dim=1),
+                                    self._scale_timesteps(t), **model_kwargs)
             if self.model_var_type in [
                 ModelVarType.LEARNED,
                 ModelVarType.LEARNED_RANGE,
             ]:
                 B, C = x_t.shape[:2]
                 C = self.conf.out_channels
-                assert model_output1.shape == (B, C * 2, *x_t.shape[2:])
-                model_output1, model_var_values = th.split(model_output1, C, dim=1)
+                assert model_output.shape == (B, C * 2, *x_t.shape[2:])
+                model_output, model_var_values = th.split(model_output, C, dim=1)
                 # Learn the variance using the variational bound, but don't let
                 # it affect our mean prediction.
-                frozen_out = th.cat([model_output1.detach(), model_var_values], dim=1)
+                frozen_out = th.cat([model_output.detach(), model_var_values], dim=1)
                 terms["vb"] = self._vb_terms_bpd(model=lambda *args, r=frozen_out: r,
-                                                 x_start=bg_m1p1, x_blurry=x1_blurry_m1p1,
+                                                 x_start=bg_m1p1, x_blurry=x_blurry_m1p1,
                                                  usr_mask_m1p1=mask_bool_0_1, x_t=x_t,
                                                  bg_m1p1=bg_m1p1, t=t_alphas, clip_denoised=False)["output"]
                 if self.loss_type == LossType.RESCALED_MSE:
@@ -678,13 +667,13 @@ class GaussianDiffusion:
                 ModelMeanType.START_X: bg_m1p1,
                 ModelMeanType.EPSILON: noise,
             }[self.model_mean_type]
-            assert model_output1.shape == target.shape == bg_m1p1.shape
+            assert model_output.shape == target.shape == bg_m1p1.shape
 
             c = 0.3
             terms["mse"] = \
-                c * mean_flat((target[:, 1::4] - model_output1[:, 1::4]) ** 2) \
-                + c * mean_flat((target[:, 2::4] - model_output1[:, 2::4]) ** 2) \
-                + c * mean_flat((target[:, 0::4] - model_output1[:, 0::4]) ** 2)
+                c * mean_flat((target[:, 1::4] - model_output[:, 1::4]) ** 2) \
+                + c * mean_flat((target[:, 2::4] - model_output[:, 2::4]) ** 2) \
+                + c * mean_flat((target[:, 0::4] - model_output[:, 0::4]) ** 2)
 
             if "vb" in terms:
                 terms["loss"] = terms["mse"] + terms["vb"]

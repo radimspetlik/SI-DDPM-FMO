@@ -174,7 +174,7 @@ class TrainLoop:
             temporal_sr_steps,
             dist_util.dev())
 
-        micro_img_blurry_m1p1 = th.cat(list(imgs_m1p1[k]
+        micro_img_blurry_m1p1 = th.cat(list(imgs_m1p1[k:k+1]
                                                 for k in range(len(imgs_m1p1))),
                                            dim=1).to(dist_util.dev())
         micro_bg_m1p1 = th.repeat_interleave(bg_m1p1,

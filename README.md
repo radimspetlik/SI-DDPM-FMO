@@ -22,6 +22,8 @@ Note that we only support pipenv installation. If you do not have pipenv install
 
 ## Evaluation
 
+The download process of pretrained models, and benchmark datasets is somewhat cumbersome, so we will eventually put everything in one script (use issues to show your interest in doing so, please).
+
 #### 1. Download the pre-trained models
 
 The pre-trained SI-DDPM-FMO models as reported in the paper are available [here](https://drive.google.com/drive/folders/1sS67PAuaKzffSOw6h0pwhKE-Wsvz6nA8?usp=drive_link). 
@@ -47,7 +49,13 @@ To evaluate the baseline model on the FMO benchmark dataset, run:
 
 ## Training
 
-The training scripts will be published soon.
+For training, you first need to generate the training dataset as described bellow, and place it in the `datasets` dir. Then, simply run
+    
+```./trn_siddpmfmo.sh```
+
+Inspecting the script, you find the training parameters. The training is expected to be run on multiple GPUs, with the DDP library of pytorch. Modify according to your needs.
+
+The baseline training is run in the same way, but using the `trn_baseline.sh` script.
 
 ### Synthetic dataset generation
 For the dataset generation, please download: 
@@ -82,3 +90,15 @@ If you use this repository, please cite the following [publication](https://arxi
   year = {2024}
 }
 ```
+
+# Code Sources
+
+We use a wild mix of the following repositories in our implementation:
+
+* [RePaint](https://github.com/andreas128/RePaint.git)
+* [GuidedDiffusion](https://github.com/openai/guided-diffusion)
+* [ImprovedDiffusion](https://github.com/openai/improved-diffusion)
+* [DeFMO](https://github.com/rozumden/DeFMO)
+* [FMO-Deblurring-Benchmark](https://github.com/rozumden/fmo-deblurring-benchmark)
+
+Therefore a big thanks to the authors of these repositories!
