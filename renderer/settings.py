@@ -3,22 +3,17 @@ import socket
 # NOTE that HDF5 is not generated here, to convert the dataset to HDF5 use dataloaders/conversion.py
 
 ## TODO: insert your ShapeNetCore.v2, textures, training and testing background paths
-g_datasets_path = '/home/spetlrad/data/defmo/datasets'
+g_datasets_path = '/yourpathto/datasets'
 
 g_generated_dataset_name = 'blender-generated-spheres'
 ## TODO: insert path to save the generated dataset
-g_generated_dataset_path = '/home/spetlrad/data/defmo/datasets/' + g_generated_dataset_name
+g_generated_dataset_path = '/yourpathto/datasets/' + g_generated_dataset_name
 ## TODO: insert your blender-2.79b path
-g_blender_excutable_path = '/home/spetlrad/data/defmo/blender-2.79-linux-glibc219-x86_64/blender'
-
-if socket.gethostname() == 'ritz':
-    g_datasets_path = '/mnt/datagrid/personal/spetlrad/defmo/datasets'
-    g_generated_dataset_path = '/mnt/datagrid/personal/spetlrad/defmo/datasets/' + g_generated_dataset_name
-    g_blender_excutable_path = '/mnt/datagrid/personal/spetlrad/defmo/blender-2.79b-linux-glibc219-x86_64/blender'
+g_blender_excutable_path = '/yourpathto/blender-2.79-linux-glibc219-x86_64/blender'
 
 g_shapenet_path = g_datasets_path + '/ShapeNetv2/ShapeNetCore.v2'
 g_textures_path = g_datasets_path + '/ShapeNetv2/textures'
-g_train_backgrounds_path = '/home/spetlrad/data/COCO/'
+g_train_backgrounds_path = '/yourpathto/data/COCO/'
 g_test_backgrounds_path = g_datasets_path + '/sports1m/seq/'
 
 g_view_point_file = {'view_points/chair.txt', 'view_points/bottle.txt', 'view_points/diningtable.txt', 'view_points/sofa.txt', 'view_points/bed.txt'}

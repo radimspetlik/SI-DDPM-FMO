@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[[source]]
+url = "https://download.pytorch.org/whl/"
+verify_ssl = true
+name = "pytorch"
+
+[packages]
+torch = {version="1.13.0+cu117", index="pytorch"}
+torchvision = {version="0.14.0+cu117", index="pytorch"}
+numpy = "*"
+blobfile = "*"
+tqdm = "*"
+pyYaml = "*"
+pillow = "*"
+opencv-python = "*"
+h5py = "*"
+scikit-image = "*"
+
+[requires]
+python_version = "3.10"
