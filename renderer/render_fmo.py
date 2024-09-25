@@ -474,7 +474,6 @@ for obj_name in g_render_objs[start_index:(start_index + step_index)]:
     obj_paths = glob.glob(obj_search_pattern, recursive=True)
     random.shuffle(obj_paths)
     obj_path = random.sample(obj_paths, 1)[0]
-    obj_path = os.path.join(g_shapenet_path, 'sphere', 'model_normalized.obj')
 
     # vps_path = random.sample(g_view_point_file, 1)[0]
     vps_path = list(g_view_point_file)[0]
